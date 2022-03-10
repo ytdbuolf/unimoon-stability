@@ -1,5 +1,6 @@
 import React from "react";
-import { lamportsToSolString } from "utils";
+import { SolBalance } from "utils";
+import { Epoch } from "components/common/Epoch";
 import {
   SysvarAccount,
   StakeHistoryInfo,
@@ -28,9 +29,9 @@ export function StakeHistoryCard({
             <thead>
               <tr>
                 <th className="w-1 text-muted">Epoch</th>
-                <th className="text-muted">Effective (SOL)</th>
-                <th className="text-muted">Activating (SOL)</th>
-                <th className="text-muted">Deactivating (SOL)</th>
+                <th className="text-muted">Effective (UNIMOON)</th>
+                <th className="text-muted">Activating (UNIMOON)</th>
+                <th className="text-muted">Deactivating (UNIMOON)</th>
               </tr>
             </thead>
             <tbody className="list">
@@ -55,15 +56,17 @@ export function StakeHistoryCard({
 const renderAccountRow = (entry: StakeHistoryEntry, index: number) => {
   return (
     <tr key={index}>
-      <td className="w-1 text-monospace">{entry.epoch}</td>
-      <td className="text-monospace">
-        {lamportsToSolString(entry.stakeHistory.effective)}
+      <td className="w-1 font-monospace">
+        <Epoch epoch={entry.epoch} link />
       </td>
-      <td className="text-monospace">
-        {lamportsToSolString(entry.stakeHistory.activating)}
+      <td className="font-monospace">
+        <SolBalance lamports={entry.stakeHistory.effective} />
       </td>
-      <td className="text-monospace">
-        {lamportsToSolString(entry.stakeHistory.deactivating)}
+      <td className="font-monospace">
+        <SolBalance lamports={entry.stakeHistory.activating} />
+      </td>
+      <td className="font-monospace">
+        <SolBalance lamports={entry.stakeHistory.deactivating} />
       </td>
     </tr>
   );

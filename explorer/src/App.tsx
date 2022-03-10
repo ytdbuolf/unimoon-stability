@@ -8,10 +8,12 @@ import { ClusterStatusBanner } from "components/ClusterStatusButton";
 import { SearchBar } from "components/SearchBar";
 
 import { AccountDetailsPage } from "pages/AccountDetailsPage";
+import { TransactionInspectorPage } from "pages/inspector/InspectorPage";
 import { ClusterStatsPage } from "pages/ClusterStatsPage";
 import { SupplyPage } from "pages/SupplyPage";
 import { TransactionDetailsPage } from "pages/TransactionDetailsPage";
 import { BlockDetailsPage } from "pages/BlockDetailsPage";
+import { EpochDetailsPage } from "pages/EpochDetailsPage";
 
 const ADDRESS_ALIASES = ["account", "accounts", "addresses"];
 const TX_ALIASES = ["txs", "txn", "txns", "transaction", "transactions"];
@@ -20,7 +22,7 @@ function App() {
   return (
     <>
       <ClusterModal />
-      <div className="main-content">
+      <div className="main-content pb-4">
         <Navbar />
         <MessageBanner />
         <ClusterStatusBanner />
@@ -39,6 +41,17 @@ function App() {
           />
           <Route
             exact
+            path={["/tx/inspector", "/tx/:signature/inspect"]}            
+            render={({ match }) => {
+              const signature = Object.getOwnPropertyDescriptor(match.params, 'signature')
+              return (
+                <TransactionInspectorPage signature={signature ? signature.value : undefined} />
+              )
+            }}
+          />
+          
+          <Route
+            exact
             path={"/tx/:signature"}
             render={({ match }) => (
               <TransactionDetailsPage signature={match.params.signature} />
@@ -46,10 +59,22 @@ function App() {
           />
           <Route
             exact
-            path={["/block/:id", "/block/:id/:tab"]}
-            render={({ match }) => (
-              <BlockDetailsPage slot={match.params.id} tab={match.params.tab} />
-            )}
+            path={"/epoch/:id"}
+            render={({ match }) => <EpochDetailsPage epoch={match.params.id} />}
+          />
+          <Route
+            exact
+            path={["/block/:id", "/block/:id/:tab"]}            
+            render={({ match }) => {
+              const tab = Object.getOwnPropertyDescriptor(match.params, 'tab')
+              return (
+                <BlockDetailsPage 
+                  slot={match.params.id}
+                  tab={tab ? tab.value : undefined}
+                />
+              )
+              
+            }}
           />
           <Route
             exact
@@ -65,16 +90,21 @@ function App() {
               return <Redirect to={{ ...location, pathname }} />;
             }}
           />
+         
           <Route
             exact
-            path={["/address/:address", "/address/:address/:tab"]}
-            render={({ match }) => (
-              <AccountDetailsPage
-                address={match.params.address}
-                tab={match.params.tab}
-              />
-            )}
-          />
+            path={["/address/:address", "/address/:address/:tab"]}            
+            render={({ match }) => {
+              const tab = Object.getOwnPropertyDescriptor(match.params, 'tab')
+              return (
+                <AccountDetailsPage
+                  address={match.params.address}
+                  tab={tab ? tab.value : undefined}
+                />
+              )
+            }}
+          />          
+
           <Route exact path="/">
             <ClusterStatsPage />
           </Route>

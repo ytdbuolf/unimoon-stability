@@ -1,5 +1,10 @@
 import React from "react";
-import { clusterApiUrl, Connection } from "@solana/web3.js";
+import {
+  clusterApiUrl,
+  Connection,
+  EpochInfo,
+  EpochSchedule,
+} from "@solana/web3.js";
 import { useQuery } from "../utils/url";
 import { useHistory, useLocation } from "react-router-dom";
 import { reportError } from "utils/sentry";
@@ -58,7 +63,9 @@ export const DEVNET_URL = clusterApiUrl("devnet");
 export function clusterUrl(cluster: Cluster, customUrl: string): string {
   switch (cluster) {
     case Cluster.Devnet:
-      return DEVNET_URL.replace("api", "explorer-api");
+      // return DEVNET_URL.replace("api", "explorer-api");
+      // return "http://explorer.unimoon.io:8899/";
+      return "http://159.100.250.220:8899/";
     case Cluster.MainnetBeta:
       return MAINNET_BETA_URL.replace("api", "explorer-api");
     case Cluster.Testnet:
@@ -68,20 +75,22 @@ export function clusterUrl(cluster: Cluster, customUrl: string): string {
   }
 }
 
-export const DEFAULT_CLUSTER = Cluster.MainnetBeta;
+export const DEFAULT_CLUSTER = Cluster.Devnet;
+const DEFAULT_CUSTOM_URL = "http://localhost:8899";
 
+type Action = State;
 interface State {
   cluster: Cluster;
   customUrl: string;
-  firstAvailableBlock?: number;
+  clusterInfo?: ClusterInfo;
   status: ClusterStatus;
 }
 
-interface Action {
-  status: ClusterStatus;
-  cluster: Cluster;
-  customUrl: string;
-  firstAvailableBlock?: number;
+interface ClusterInfo {
+  firstAvailableBlock: number;
+  epochSchedule: EpochSchedule;
+  epochInfo: EpochInfo;
+  genesisHash: string;
 }
 
 type Dispatch = (action: Action) => void;
@@ -113,14 +122,16 @@ function parseQuery(query: URLSearchParams): Cluster {
     case "testnet":
       return Cluster.Testnet;
     case "mainnet-beta":
-    default:
       return Cluster.MainnetBeta;
+    default:
+      return Cluster.Devnet;
   }
 }
 
 type SetShowModal = React.Dispatch<React.SetStateAction<boolean>>;
-const ModalContext =
-  React.createContext<[boolean, SetShowModal] | undefined>(undefined);
+const ModalContext = React.createContext<[boolean, SetShowModal] | undefined>(
+  undefined
+);
 const StateContext = React.createContext<State | undefined>(undefined);
 const DispatchContext = React.createContext<Dispatch | undefined>(undefined);
 
@@ -128,7 +139,7 @@ type ClusterProviderProps = { children: React.ReactNode };
 export function ClusterProvider({ children }: ClusterProviderProps) {
   const [state, dispatch] = React.useReducer(clusterReducer, {
     cluster: DEFAULT_CLUSTER,
-    customUrl: "",
+    customUrl: DEFAULT_CUSTOM_URL,
     status: ClusterStatus.Connecting,
   });
   const [showModal, setShowModal] = React.useState(false);
@@ -137,9 +148,8 @@ export function ClusterProvider({ children }: ClusterProviderProps) {
   const enableCustomUrl =
     localStorageIsAvailable() &&
     localStorage.getItem("enableCustomUrl") !== null;
-  const customUrl = enableCustomUrl
-    ? query.get("customUrl") || ""
-    : state.customUrl;
+  const customUrl =
+    (enableCustomUrl && query.get("customUrl")) || state.customUrl;
   const history = useHistory();
   const location = useLocation();
 
@@ -153,15 +163,6 @@ export function ClusterProvider({ children }: ClusterProviderProps) {
 
   // Reconnect to cluster when params change
   React.useEffect(() => {
-    if (cluster === Cluster.Custom) {
-      // Remove cluster param if custom url has not been set
-      if (customUrl.length === 0) {
-        query.delete("cluster");
-        history.push({ ...location, search: query.toString() });
-        return;
-      }
-    }
-
     updateCluster(dispatch, cluster, customUrl);
   }, [cluster, customUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -188,13 +189,28 @@ async function updateCluster(
   });
 
   try {
+    // validate url
+    new URL(customUrl);
+
     const connection = new Connection(clusterUrl(cluster, customUrl));
-    const firstAvailableBlock = await connection.getFirstAvailableBlock();
+    const [firstAvailableBlock, epochSchedule, epochInfo, genesisHash] =
+      await Promise.all([
+        connection.getFirstAvailableBlock(),
+        connection.getEpochSchedule(),
+        connection.getEpochInfo(),
+        connection.getGenesisHash(),
+      ]);
+
     dispatch({
       status: ClusterStatus.Connected,
       cluster,
       customUrl,
-      firstAvailableBlock,
+      clusterInfo: {
+        firstAvailableBlock,
+        genesisHash,
+        epochSchedule,
+        epochInfo,
+      },
     });
   } catch (error) {
     if (cluster !== Cluster.Custom) {

@@ -1,5 +1,6 @@
 import React from "react";
-import Logo from "img/logos-solana/dark-explorer-logo.svg";
+// import Logo from "img/logos-solana/dark-explorer-logo.svg";
+import Logo from "img/logos-solana/dark-explorer-logo.png";
 import { clusterPath } from "utils/url";
 import { Link, NavLink } from "react-router-dom";
 import { ClusterStatusButton } from "components/ClusterStatusButton";
@@ -12,7 +13,7 @@ export function Navbar() {
     <nav className="navbar navbar-expand-md navbar-light">
       <div className="container">
         <Link to={clusterPath("/")}>
-          <img src={Logo} width="250" alt="Solana Explorer" />
+          <img src={Logo} width="150" alt="Unimoon Explorer" />
         </Link>
 
         <button
@@ -24,11 +25,11 @@ export function Navbar() {
         </button>
 
         <div
-          className={`collapse navbar-collapse ml-auto mr-4 ${
+          className={`collapse navbar-collapse ms-auto me-4 ${
             collapse ? "show" : ""
           }`}
         >
-          <ul className="navbar-nav mr-auto">
+          <ul className="navbar-nav me-auto">
             <li className="nav-item">
               <NavLink className="nav-link" to={clusterPath("/")} exact>
                 Cluster Stats
@@ -37,6 +38,11 @@ export function Navbar() {
             <li className="nav-item">
               <NavLink className="nav-link" to={clusterPath("/supply")}>
                 Supply
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink className="nav-link" to={clusterPath("/tx/inspector")}>
+                Inspector
               </NavLink>
             </li>
           </ul>
